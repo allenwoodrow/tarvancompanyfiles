@@ -46,6 +46,7 @@ class AuthenticatedSessionController extends Controller
         return redirect()->route('shop');
     }
 
+
     /**
      * Destroy an authenticated session.
      */
