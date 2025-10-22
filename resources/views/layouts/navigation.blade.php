@@ -76,9 +76,15 @@
                   <path d="M11.5752 8.42188C12.4175 7.52625 12.9382 6.32438 12.9382 5C12.9382 2.24313 10.6974 0 7.94337 0C5.18936 0 2.94857 2.24313 2.94857 5C2.94857 6.32438 3.46928 7.52625 4.31153 8.42188C1.81538 9.81625 0.451172 12.77 0.451172 16.875C0.451172 17.2206 0.730881 17.5 1.07552 17.5H14.8112C15.1565 17.5 15.4356 17.2206 15.4356 16.875C15.4356 12.7694 14.0714 9.81625 11.5752 8.42188ZM7.94337 1.25C10.0093 1.25 11.6895 2.93187 11.6895 5C11.6895 7.06812 10.0093 8.75 7.94337 8.75C5.87739 8.75 4.19727 7.06812 4.19727 5C4.19727 2.93187 5.87739 1.25 7.94337 1.25ZM1.71111 16.25C1.80913 13.6038 2.57771 10.5044 5.38416 9.28563C6.13338 9.73625 7.00747 10 7.94337 10C8.87927 10 9.75336 9.73625 10.5026 9.28563C13.3084 10.5037 14.0776 13.6038 14.175 16.25H1.71111Z" fill="#F39C12" />
                 </svg>
 
-                <a href="{{ route('login') }}">
-                  Login or Register
-                </a>
+                @auth
+                  <a href="{{ route('profile.account') }}">
+                    Welcome, {{ Auth::user()->name ?? 'User' }}
+                  </a>
+                @else
+                  <a href="{{ route('login') }}">
+                    Login or Register
+                  </a>
+                @endauth
               </p>
             </div>
           </div>
@@ -100,19 +106,27 @@
               <!-- desktop menu -->
               <nav class="main-menu">
                 <ul>
-                  <li>
-                    <a href="{{ route('home') }}">Home</a>
-                    
-                  </li>
-                  <li>
-                    <a href="{{ route('shop') }}">Menu</a>
-                  </li>
-                  <li>
-                    <a href="{{ route('login') }}">Login</a>
-                  </li>
-                  <li>
-                    <a href="{{ route('register') }}">Register</a>
-                  </li>
+                  <li><a href="{{ route('home') }}">Home</a></li>
+                  <li><a href="{{ route('shop') }}">Menu</a></li>
+
+                  @auth
+                    {{-- When user is logged in --}}
+                    <li>
+                      <a href="{{ route('profile.account') }}">My Account</a>
+                    </li>
+                    <li>
+                      <form action="{{ route('logout') }}" method="POST" style="display:inline;">
+                        @csrf
+                        <button type="submit" class="btn btn-link p-0 text-white" style="text-decoration:none;">
+                          Logout
+                        </button>
+                      </form>
+                    </li>
+                  @else
+                    {{-- When user is NOT logged in --}}
+                    <li><a href="{{ route('login') }}">Login</a></li>
+                    <li><a href="{{ route('register') }}">Register</a></li>
+                  @endauth
                 </ul>
               </nav>
             </div>
