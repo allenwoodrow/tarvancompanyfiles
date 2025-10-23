@@ -191,33 +191,42 @@
   </div>
 
   <!-- Cart Offcanvas -->
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasCart" aria-labelledby="offcanvasCartLabel">
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasCart" aria-labelledby="offcanvasCartLabel">
     <div class="offcanvas-header bg-dark text-white">
-        <h5 class="offcanvas-title" id="offcanvasCartLabel">Your Cart</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      <h5 class="offcanvas-title" id="offcanvasCartLabel">🛒 Your Cart</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
-    <div class="offcanvas-body">
-        <div id="cart-items" class="cart-items-list mb-4"></div>
-        <div class="border-top pt-3">
-        <p class="d-flex justify-content-between mb-1">
-            <span>Subtotal:</span>
-            <strong id="cart-subtotal">₦0</strong>
+
+    <div class="offcanvas-body d-flex flex-column">
+      <!-- Cart items container -->
+      <div id="cart-items" class="cart-items-list flex-grow-1 mb-4">
+        <div class="text-center text-muted py-5">Loading your cart...</div>
+      </div>
+
+      <!-- Cart summary -->
+      <div class="border-top pt-3">
+        <p class="d-flex justify-content-between mb-1 text-dark">
+          <span>Subtotal:</span>
+          <strong id="cart-subtotal">₦0</strong>
         </p>
-        <p class="d-flex justify-content-between mb-1">
-            <span>Shipping:</span>
-            <strong id="cart-shipping">₦0</strong>
+        <!-- <p class="d-flex justify-content-between mb-1 text-dark">
+          <span>Shipping:</span>
+          <strong id="cart-shipping">₦0</strong>
+        </p> -->
+        <p class="d-flex justify-content-between fs-5 border-top pt-2 text-dark">
+          <span>Total:</span>
+          <strong id="cart-total">₦0</strong>
         </p>
-        <p class="d-flex justify-content-between fs-5 border-top pt-2">
-            <span>Total:</span>
-            <strong id="cart-total">₦0</strong>
-        </p>
-        </div>
-        <div class="d-grid gap-2 mt-3">
+      </div>
+
+      <!-- Buttons -->
+      <div class="d-grid gap-2 mt-3">
         <a href="{{ route('cart.index') }}" class="btn btn-warning text-dark fw-bold">View Full Cart</a>
-        <a href="{{ route('checkout.index') }}" class="btn btn-success fw-bold">Checkout</a>
-        </div>
+        <a href="{{ route('checkout.index') }}" class="btn btn-success fw-bold">Proceed to Checkout</a>
+      </div>
     </div>
-    </div>
+  </div>
+
 
   <!-- search form start -->
   <div class="offcanvas offcanvas-top roister-header-searchbar-form" tabindex="-1" id="offcanvasSearchTop">
