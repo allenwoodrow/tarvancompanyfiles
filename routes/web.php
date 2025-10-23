@@ -29,6 +29,9 @@ Route::get('/shop', [ShopController::class, 'index'])->name('shop');
 
 Route::get('/shop/{product}', [App\Http\Controllers\ShopController::class, 'show'])->name('product.show');
 
+Route::get('/shop/{product}', [ShopController::class, 'show'])->name('shop.show');
+
+
 Route::get('/about', [ShopController::class, 'about'])->name('about');
 
 Route::get('/product/{id}', [ProductViewController::class, 'show'])->name('product.show');
@@ -41,18 +44,18 @@ Route::delete('/wishlist/remove/{id}', [WishlistController::class, 'remove'])->n
 Route::post('/currency/switch', [CurrencyController::class, 'switch'])->name('currency.switch');
 Route::get('/currency/rate', [CurrencyController::class, 'getExchangeRate'])->name('currency.rate');
 
-
 // Cart routes - make data route available for both guests and authenticated users
 Route::get('/cart/data', [CartController::class, 'getCartData'])->name('cart.data');
+
+// Allow add to cart for guests — controller will redirect to login if not authenticated
+Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 
 // Other cart routes require authentication
 Route::middleware('auth')->group(function () {
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-    Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
     Route::post('/cart/update/{id}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
     Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
-    Route::get('/cart/data', [CartController::class, 'getCartData'])->name('cart.data');
 });
 
 // Checkout routes

@@ -10,58 +10,48 @@ class ShopController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::query()->where(function($q) {
-            // Products that have stock in main table OR have variants with stock
+        // Base query — only show available products or those with stocked variants
+        $query = Product::query()->where(function ($q) {
             $q->where('stock', '>', 0)
-              ->orWhereHas('variants', function($variantQuery) {
-                  $variantQuery->where('stock', '>', 0);
-              });
+              ->orWhereHas('variants', fn($v) => $v->where('stock', '>', 0));
         });
-        
-        // Search filter
-        if ($request->has('search') && $request->search) {
-            $query->where(function($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('description', 'like', '%' . $request->search . '%');
-            });
+
+        // 🔍 Search Filter
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(fn($q) =>
+                $q->where('name', 'like', "%$search%")
+                  ->orWhere('description', 'like', "%$search%")
+            );
         }
-        
-        // Category filter
-        if ($request->has('category') && $request->category) {
+
+        // 🍛 Category Filter (e.g., Rice, Swallow, Soup, Snacks, Drinks)
+        if ($request->filled('category')) {
             $query->where('category', $request->category);
         }
-        
-        // Price filter
-        if ($request->has('min_price') && $request->min_price) {
+
+        // 💰 Price Range Filter
+        if ($request->filled('min_price')) {
             $query->where('price', '>=', $request->min_price);
         }
-        if ($request->has('max_price') && $request->max_price) {
+        if ($request->filled('max_price')) {
             $query->where('price', '<=', $request->max_price);
         }
-        
-        // Color filter - now checking both product color and variant colors
-        if ($request->has('color') && $request->color) {
-            $query->where(function($q) use ($request) {
-                $q->where('color', $request->color)
-                  ->orWhereHas('variants', function($variantQuery) use ($request) {
-                      $variantQuery->where('color', $request->color);
-                  });
-            });
+
+        // 🎨 Color Filter — only from product_variants
+        if ($request->filled('color')) {
+            $color = $request->color;
+            $query->whereHas('variants', fn($v) => $v->where('color', $color));
         }
-        
-        // Size filter - now checking both product size and variant sizes
-        if ($request->has('size') && $request->size) {
-            $query->where(function($q) use ($request) {
-                $q->where('size', $request->size)
-                  ->orWhereHas('variants', function($variantQuery) use ($request) {
-                      $variantQuery->where('size', $request->size);
-                  });
-            });
+
+        // 📏 Size Filter — only from product_variants
+        if ($request->filled('size')) {
+            $size = $request->size;
+            $query->whereHas('variants', fn($v) => $v->where('size', $size));
         }
-        
-        // Sorting
-        $sort = $request->get('sort', 'newest');
-        switch ($sort) {
+
+        // 🔄 Sorting
+        switch ($request->get('sort', 'newest')) {
             case 'price_asc':
                 $query->orderBy('price', 'asc');
                 break;
@@ -76,17 +66,15 @@ class ShopController extends Controller
                 break;
             default:
                 $query->latest();
-                break;
         }
-        
+
+        // Include variants in the result
         $products = $query->with('variants')->paginate(12);
-        
-        // Get filter options including variants data
-        $categories = Product::where(function($q) {
+
+        // 🏷️ Categories (unique + active)
+        $categories = Product::where(function ($q) {
                 $q->where('stock', '>', 0)
-                  ->orWhereHas('variants', function($variantQuery) {
-                      $variantQuery->where('stock', '>', 0);
-                  });
+                  ->orWhereHas('variants', fn($v) => $v->where('stock', '>', 0));
             })
             ->distinct()
             ->whereNotNull('category')
@@ -94,137 +82,88 @@ class ShopController extends Controller
             ->filter()
             ->values()
             ->toArray();
-            
-        // Get colors from both products and variants
-        $productColors = Product::where(function($q) {
-                $q->where('stock', '>', 0)
-                  ->orWhereHas('variants', function($variantQuery) {
-                      $variantQuery->where('stock', '>', 0);
-                  });
-            })
+
+        // 🎨 All available colors (from variants only)
+        $colors = ProductVariant::where('stock', '>', 0)
             ->whereNotNull('color')
+            ->distinct()
             ->pluck('color')
             ->filter()
+            ->values()
             ->toArray();
-            
-        $variantColors = ProductVariant::where('stock', '>', 0)
-            ->whereNotNull('color')
-            ->pluck('color')
-            ->filter()
-            ->toArray();
-            
-        $colors = array_unique(array_merge($productColors, $variantColors));
-        sort($colors);
-        
-        // Get sizes from both products and variants
-        $productSizes = Product::where(function($q) {
-                $q->where('stock', '>', 0)
-                  ->orWhereHas('variants', function($variantQuery) {
-                      $variantQuery->where('stock', '>', 0);
-                  });
-            })
+
+        // 📏 All available sizes (from variants only)
+        $sizes = ProductVariant::where('stock', '>', 0)
             ->whereNotNull('size')
+            ->distinct()
             ->pluck('size')
             ->filter()
+            ->values()
             ->toArray();
-            
-        $variantSizes = ProductVariant::where('stock', '>', 0)
-            ->whereNotNull('size')
-            ->pluck('size')
-            ->filter()
-            ->toArray();
-            
-        $sizes = array_unique(array_merge($productSizes, $variantSizes));
-        sort($sizes);
-        
-        // Get counts for filters
-        $categoryCounts = Product::where(function($q) {
+
+        // 📊 Category Counts
+        $categoryCounts = Product::where(function ($q) {
                 $q->where('stock', '>', 0)
-                  ->orWhereHas('variants', function($variantQuery) {
-                      $variantQuery->where('stock', '>', 0);
-                  });
+                  ->orWhereHas('variants', fn($v) => $v->where('stock', '>', 0));
             })
-            ->whereNotNull('category')
+            ->selectRaw('category, COUNT(*) as count')
             ->groupBy('category')
-            ->selectRaw('category, count(*) as count')
             ->pluck('count', 'category')
             ->toArray();
-        
-        // Color counts (simplified approach)
+
+        // 🎨 Color Counts
         $colorCounts = [];
         foreach ($colors as $color) {
-            $count = Product::where(function($q) use ($color) {
-                    $q->where(function($q2) use ($color) {
-                        $q2->where('stock', '>', 0)
-                           ->where('color', $color);
-                    })
-                    ->orWhereHas('variants', function($variantQuery) use ($color) {
-                        $variantQuery->where('stock', '>', 0)
-                                    ->where('color', $color);
-                    });
-                })
-                ->count();
-            $colorCounts[$color] = $count;
+            $colorCounts[$color] = Product::whereHas('variants', fn($v) =>
+                $v->where('color', $color)->where('stock', '>', 0)
+            )->count();
         }
-        
-        // Size counts (simplified approach)
+
+        // 📏 Size Counts
         $sizeCounts = [];
         foreach ($sizes as $size) {
-            $count = Product::where(function($q) use ($size) {
-                    $q->where(function($q2) use ($size) {
-                        $q2->where('stock', '>', 0)
-                           ->where('size', $size);
-                    })
-                    ->orWhereHas('variants', function($variantQuery) use ($size) {
-                        $variantQuery->where('stock', '>', 0)
-                                    ->where('size', $size);
-                    });
-                })
-                ->count();
-            $sizeCounts[$size] = $count;
+            $sizeCounts[$size] = Product::whereHas('variants', fn($v) =>
+                $v->where('size', $size)->where('stock', '>', 0)
+            )->count();
         }
-        
-        $maxPrice = Product::where(function($q) {
-                $q->where('stock', '>', 0)
-                  ->orWhereHas('variants', function($variantQuery) {
-                      $variantQuery->where('stock', '>', 0);
-                  });
-            })->max('price') ?: 1000;
-        
+
+        // 💰 Maximum price for slider
+        $maxPrice = Product::where(function ($q) {
+            $q->where('stock', '>', 0)
+              ->orWhereHas('variants', fn($v) => $v->where('stock', '>', 0));
+        })->max('price') ?: 1000;
+
         return view('shop', compact(
-            'products', 
-            'categories', 
-            'colors', 
-            'sizes', 
-            'categoryCounts', 
-            'colorCounts', 
-            'sizeCounts', 
+            'products',
+            'categories',
+            'colors',
+            'sizes',
+            'categoryCounts',
+            'colorCounts',
+            'sizeCounts',
             'maxPrice'
         ));
     }
-    
+
     public function show(Product $product)
     {
-        // Only show product if it has stock in main table OR variants
-        if ($product->stock <= 0 && (!$product->variants || $product->variants->where('stock', '>', 0)->count() === 0)) {
+        // Ensure product has stock or stocked variants
+        if ($product->stock <= 0 && $product->variants()->where('stock', '>', 0)->count() === 0) {
             abort(404, 'Product not available');
         }
-        
-        // Get related products that have stock
+
         $relatedProducts = Product::where('category', $product->category)
             ->where('id', '!=', $product->id)
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->where('stock', '>', 0)
-                  ->orWhereHas('variants', function($variantQuery) {
-                      $variantQuery->where('stock', '>', 0);
-                  });
+                  ->orWhereHas('variants', fn($v) => $v->where('stock', '>', 0));
             })
             ->limit(4)
             ->get();
-            
+
         return view('products.show', compact('product', 'relatedProducts'));
     }
-    
+
     public function about()
     {
         return view('about');

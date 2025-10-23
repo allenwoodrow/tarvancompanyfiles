@@ -207,13 +207,14 @@
               <a href="{{ route('product.show', $product->id) }}">
                 <img src="{{ asset($product->image) }}" alt="{{ $product->name }}" class="img-fluid rounded-3">
               </a>
-              <form action="{{ route('cart.add') }}" method="POST" class="position-absolute bottom-0 end-0 m-3">
+              <form action="{{ route('cart.add') }}" method="POST" class="add-to-cart-form position-absolute top-0 start-0 m-3">
                 @csrf
                 <input type="hidden" name="product_id" value="{{ $product->id }}">
                 <button type="submit" class="cart-btn btn btn-warning text-white shadow-sm rounded-circle">
                   <i class="fa-solid fa-cart-plus"></i>
                 </button>
               </form>
+
             </div>
             <div class="content-wraper">
               <div class="top-area mb-24 d-flex justify-content-between align-items-center">
@@ -532,57 +533,7 @@
 </section>
 <!-- photo gallery end -->
 
-<!-- footer -->
-<footer class="roister-footer-1" data-background="{{ asset('assets/images/bg/footer-bg.png') }}">
-  <div class="container">
-    <div class="row">
-      <div class="col-lg-6 left-side border-right">
-        <div class="download-app-widget">
-          <h3 class="title mb-48">Order Easily — Coming Soon on App Stores</h3>
-          <p class="des mb-40">Your favorite meals anytime, anywhere.</p>
-          <div class="btn-wraper">
-            <a href="#" class="primary-btn border-radius-6">Play Store</a>
-            <a href="#" class="outline-white-btn border-radius-6">Apple Store</a>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-6 right-side">
-        <div class="row gy-4 justify-content-center">
-          <div class="col-sm-6 col-md-5">
-            <div class="footer-widget">
-              <h4 class="widget-title mb-24">Popular Dishes</h4>
-              <ul>
-                <li><a href="#">Jollof Rice</a></li>
-                <li><a href="#">Pounded Yam & Egusi</a></li>
-                <li><a href="#">Pepper Soup</a></li>
-                <li><a href="#">Suya Mix</a></li>
-                <li><a href="#">Fried Plantain & Egg</a></li>
-                <li><a href="#">Ofada Stew</a></li>
-              </ul>
-            </div>
-          </div>
-          <div class="col-sm-6 col-md-5">
-            <div class="footer-widget">
-              <h4 class="widget-title mb-24">Quick Links</h4>
-              <ul>
-                <li><a href="{{ url('/') }}">Home</a></li>
-                <li><a href="{{ route('about') }}">About Us</a></li>
-                <li><a href="{{ route('shop') }}">Shop Meals</a></li>
-                <li><a href="#">Contact</a></li>
-                <li><a href="#">FAQs</a></li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="copyright-area">
-      <p>© {{ date('Y') }} So Sweet Tarvan. All Rights Reserved.</p>
-    </div>
-  </div>
-</footer>
 
-<button type="button" class="scroll-top-btn"><i class="fa-solid fa-angles-up"></i></button>
 @endsection
 
 @section('scripts')

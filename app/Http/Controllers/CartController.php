@@ -13,28 +13,25 @@ class CartController extends Controller
 {
     public function index(Request $request)
     {
-        // Only allow authenticated users
         if (!Auth::check()) {
             return redirect()->route('login');
         }
 
         $cart = Cart::getCart($request);
         $cart->load('items.product');
-        
+
         return view('cart.index', compact('cart'));
     }
 
     public function getCartData(Request $request)
     {
         try {
-            // For guests, return empty cart data
             if (!Auth::check()) {
                 return response()->json([
                     'success' => true,
                     'cart' => [
                         'items' => [],
                         'subtotal' => 0,
-                        'shipping' => 0,
                         'total' => 0,
                         'count' => 0
                     ],
@@ -45,7 +42,7 @@ class CartController extends Controller
 
             $cart = Cart::getCart($request);
             $cart->load('items.product');
-            
+
             return response()->json([
                 'success' => true,
                 'cart' => $this->formatCartData($cart),
@@ -62,13 +59,16 @@ class CartController extends Controller
 
     public function add(Request $request)
     {
-        // Only allow authenticated users
+        // If not authenticated - respond with JSON for AJAX or redirect for normal requests
         if (!Auth::check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Please login to add items to cart',
-                'redirect' => route('login')
-            ], 401);
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please login to add items to cart',
+                    'redirect' => route('login')
+                ], 401);
+            }
+            return redirect()->route('login')->with('error', 'Please login to add items to your cart.');
         }
 
         $request->validate([
@@ -85,7 +85,6 @@ class CartController extends Controller
             $product = Product::findOrFail($request->product_id);
             $quantity = $request->quantity ?: 1;
 
-            // Check if item already exists in cart
             $existingItem = $cart->items()
                 ->where('product_id', $product->id)
                 ->where('size', $request->size)
@@ -118,7 +117,6 @@ class CartController extends Controller
                 'cart_count' => $cart->items->count(),
                 'message' => 'Product added to cart successfully!'
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -161,9 +159,10 @@ class CartController extends Controller
 
             return response()->json([
                 'success' => true,
-                'cart' => $this->formatCartData($cart)
+                'cart' => $this->formatCartData($cart),
+                'cart_count' => $cart->items->count(),
+                'message' => 'Cart updated successfully'
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -190,9 +189,9 @@ class CartController extends Controller
             return response()->json([
                 'success' => true,
                 'cart' => $this->formatCartData($cart),
+                'cart_count' => $cart->items->count(),
                 'message' => 'Product removed from cart successfully!'
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -216,9 +215,9 @@ class CartController extends Controller
             return response()->json([
                 'success' => true,
                 'cart' => $this->formatCartData($cart),
+                'cart_count' => 0,
                 'message' => 'Cart cleared successfully!'
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -235,38 +234,18 @@ class CartController extends Controller
                 return [
                     'id' => $item->id,
                     'product_id' => $item->product_id,
-                    'name' => $item->product->name,
+                    'name' => $item->product->name ?? 'Item',
                     'price' => (float) $item->price,
                     'quantity' => $item->quantity,
                     'size' => $item->size,
                     'color' => $item->color,
-                    'image' => $item->product->image ? asset($item->product->image) : asset('assets/img/product/default.jpg'),
+                    'image' => $item->product && $item->product->image ? asset($item->product->image) : asset('assets/images/default.jpg'),
                     'total' => (float) ($item->price * $item->quantity)
                 ];
             })->keyBy('id'),
             'subtotal' => (float) $cart->subtotal,
-            'shipping' => (float) $cart->shipping,
-            'total' => (float) $cart->total,
+            'total' => (float) $cart->subtotal,
             'count' => $cart->items->count()
         ];
-    }
-
-    // In your CartController or CheckoutController
-    public function confirmation()
-    {
-        // Make sure you're passing the cart data correctly
-        $cartItems = Cart::content(); // or however you get cart items
-        
-        // Ensure each item has string values, not arrays
-        foreach ($cartItems as $item) {
-            if (is_array($item->name)) {
-                $item->name = implode(', ', $item->name);
-            }
-            if (is_array($item->price)) {
-                $item->price = $item->price[0] ?? $item->price;
-            }
-        }
-        
-        return view('checkout.confirmation', compact('cartItems'));
     }
 }
